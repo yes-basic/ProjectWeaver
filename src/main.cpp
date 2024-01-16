@@ -11,7 +11,7 @@ TFT_eSprite img = TFT_eSprite(&tft);
 
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
-  //heltec mac EC:62:60:B3:B7:BC            EC:62:60:B3:B7:BC
+  //heltec mac EC:62:60:B3:B7:BC            EC:62:60:B3:B7:BC 
   uint8_t broadcastAddress[] = {0xEC, 0x62, 0x60, 0xB3, 0xB7, 0xBC};
   esp_now_peer_info_t peerInfo;
 
