@@ -5,10 +5,14 @@
 #include <WiFi.h>
 #include <TFT_eSPI.h> // Graphics and font library for ST7735 driver chip
 #include <SPI.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h> 
+
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
-
+Adafruit_MPU6050 mpu;
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
   //heltec mac EC:62:60:B3:B7:BC            EC:62:60:B3:B7:BC 
@@ -55,6 +59,17 @@ void setup() {
   // Init Serial Monitor, analog, and tft
     Serial.begin(115200);
     analogReadResolution(12);
+    Serial.println("weaver V0.1");
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
     tft.init();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
@@ -85,6 +100,8 @@ void setup() {
 }
  
 void loop() {
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
   //create percent values 
     data.pin4 =round(map(analogRead(pin4),0,4095,0,100));
     data.pin3 =round(map(analogRead(pin3),0,4095,0,100));
@@ -112,7 +129,7 @@ void loop() {
     }     
 
   //tft refresh
-    if(true){
+    
         img.fillSprite(TFT_BLACK);
         img.setTextSize(2);
        //send success 
@@ -126,10 +143,15 @@ void loop() {
         img.drawString("pin 4:",0,102,2);img.drawNumber(data.pin4,75,102,2);img.drawString("%",100,102,2);
         */
         img.setCursor(0, 0, 2);
-        img.print("pin 1:");img.print(data.pin1);img.println("%");
-        img.print("pin 2:");img.print(data.pin2);img.println("%");
-        img.print("pin 3:");img.print(data.pin3);img.println("%");
-        img.print("pin 4:");img.print(data.pin4);img.println("%");
+        img.print(data.pin1);img.println("%"); 
+        img.print(data.pin2);img.println("%");
+        img.print(data.pin3);img.println("%");
+        img.print(data.pin4);img.println("%");
+        img.setCursor(75,0,2); img.println("m/s^2  angle");
+        img.setCursor(75,34.2);  img.print("x");img.println(a.acceleration.x);
+        img.setCursor(75,68,2);  img.print("y");img.println(a.acceleration.y);
+        img.setCursor(75,102,2);  img.print("z");img.println(a.acceleration.z);
+        
         img.pushSprite(0, 0);
         //update tft variables
           dataTFT.pin1=data.pin1;
@@ -138,7 +160,7 @@ void loop() {
           dataTFT.pin4=data.pin4;
           dataTFT.sendStat=data.sendStat;
 
-    }
+    
 
 
 
