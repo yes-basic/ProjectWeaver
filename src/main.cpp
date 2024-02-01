@@ -60,13 +60,6 @@ void setup() {
     Serial.begin(115200);
     analogReadResolution(12);
     Serial.println("weaver V0.1");
-  if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
-    while (1) {
-      delay(10);
-    }
-  }
-  Serial.println("MPU6050 Found!");
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
@@ -76,6 +69,15 @@ void setup() {
   //init tft sprite
     img.createSprite(240, 135);
     img.fillSprite(TFT_BLACK);
+  //init gyro
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    tft.println("MPU init failed");
+    while (1) {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
   // Set device as a Wi-Fi Station
     WiFi.mode(WIFI_STA);
 
