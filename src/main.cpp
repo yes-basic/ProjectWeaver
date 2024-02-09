@@ -10,6 +10,7 @@
 #include <Wire.h> 
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
@@ -35,7 +36,7 @@ Adafruit_MPU6050 mpu;
     int val4;
   } MARINOW;
   MARINOW send1;
-//init pin percent and past percent struct
+//init pin percent and  past percent struct
   typedef struct mainStruct{
     int pin1;
     int pin2;
@@ -50,8 +51,8 @@ Adafruit_MPU6050 mpu;
 
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  //Serial.print("\r\nLast Packet Send Status:\t");
+  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
   data.sendStat=status;
 }
 
@@ -59,25 +60,25 @@ void setup() {
   // Init Serial Monitor, analog, and tft
     Serial.begin(115200);
     analogReadResolution(12);
-    Serial.println("weaver V0.1");
+    Serial.println("RPS weaver V0.1");
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
     tft.init();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
-  //init tft sprite
+  //init tft sprite 
     img.createSprite(240, 135);
     img.fillSprite(TFT_BLACK);
   //init gyro
-  if (!mpu.begin()) {
-    Serial.println("Failed to find MPU6050 chip");
-    tft.println("MPU init failed");
-    while (1) {
-      delay(10);
+    if (!mpu.begin()) {
+      Serial.println("Failed to find MPU6050 chip");
+      tft.println("MPU init failed");
+      while (1) {
+       delay(10);
+      }
     }
-  }
-  Serial.println("MPU6050 Found!");
+    Serial.println("MPU6050 Found!");
   // Set device as a Wi-Fi Station
     WiFi.mode(WIFI_STA);
 
@@ -102,6 +103,10 @@ void setup() {
 }
  
 void loop() {
+  //send serial values
+  Serial.println(analogRead(37));
+
+  //check sensors
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
   //create percent values 
@@ -123,12 +128,12 @@ void loop() {
     
       //check send result
         if (result == ESP_OK) {
-          Serial.println("Sent with success");
+          //Serial.println("Sent with success");
          }
          else {
-           Serial.println("Error sending the data");
+           //Serial.println("Error sending the data");
          }
-    }     
+      }     
 
   //tft refresh
     
