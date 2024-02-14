@@ -16,6 +16,7 @@ TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
+  //t-disp with pin:D4:D4:DA:5D:F6:C8
   //heltec mac EC:62:60:B3:B7:BC            EC:62:60:B3:B7:BC 
   uint8_t broadcastAddress[] = {0xEC, 0x62, 0x60, 0xB3, 0xB7, 0xBC};
   esp_now_peer_info_t peerInfo;
@@ -79,9 +80,10 @@ void setup() {
       }
     }
     Serial.println("MPU6050 Found!");
-  // Set device as a Wi-Fi Station
+  // Manage device Wi-Fi
     WiFi.mode(WIFI_STA);
-
+    Serial.print("MAC:");
+    Serial.println(WiFi.macAddress());
   // Init ESP-NOW
     if (esp_now_init() != ESP_OK) {
       Serial.println("Error initializing ESP-NOW");
@@ -103,12 +105,23 @@ void setup() {
 }
  
 void loop() {
-  //send serial values
-  Serial.println(analogRead(37));
-
   //check sensors
-  sensors_event_t a, g, temp;
-  mpu.getEvent(&a, &g, &temp);
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+  
+  //send serial values
+    //Serial.print(a.acceleration.y);
+    //Serial.println(" 20 -20");
+    if(!digitalRead(0)){
+      Serial.print("Rotation X:");
+      Serial.print(a.acceleration.x);
+      Serial.print("   Y:");
+      Serial.print(a.acceleration.y);
+      Serial.print("   Z:");
+      Serial.print(a.acceleration.z);
+      Serial.println(" High:20 Low:-20");
+      Serial.println();
+    }
   //create percent values 
     data.pin4 =round(map(analogRead(pin4),0,4095,0,100));
     data.pin3 =round(map(analogRead(pin3),0,4095,0,100));
