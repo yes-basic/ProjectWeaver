@@ -142,22 +142,23 @@ void loop() {
       
     }
   //determine motion
-    if(a.acceleration.y<gLow&&hitstage%2==0){
-      hitstage++;
-      if(hitstage==1){firstHitTime=millis();}
-      prevHitTime=millis();
-    }
-    if(a.acceleration.y>gHigh&&hitstage%2==1){
-      hitstage++;
-      prevHitTime=millis();
-    }
-    if(prevHitTime+timePerHit<millis()){
-      hitstage=0;
-    }
-    if(hitstage>5){
-      if(hitstage<7){
-
+    if(hitstage<5){
+      if(a.acceleration.y<gLow&&hitstage%2==0){
+        hitstage++;
+        if(hitstage==1){firstHitTime=millis();}
+        prevHitTime=millis();
       }
+      if(a.acceleration.y>gHigh&&hitstage%2==1){
+        hitstage++;
+        prevHitTime=millis();
+      }
+      if(prevHitTime+timePerHit<millis()&&hitstage<6){
+        hitstage=0;
+      }
+    }else if(prevHitTime+timePerHit<millis()){
+      hitstage=0;
+      Serial.println("done");
+      delay(5000);
     }
     
   //create percent values 
