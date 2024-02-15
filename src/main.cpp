@@ -14,6 +14,13 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
+//init misc var
+  long firstHitTime=0;
+  int hitstage=0;
+  bool debugtoggleblocker=0;
+  bool debug=0;
+  int gLow=-6;
+  int gHigh=18;
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
   //t-disp with pin:D4:D4:DA:5D:F6:C8
@@ -61,7 +68,7 @@ void setup() {
   // Init Serial Monitor, analog, and tft
     Serial.begin(115200);
     analogReadResolution(12);
-    Serial.println("RPS weaver V0.1");
+    Serial.println("RPS weaver V0.11");
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
@@ -109,19 +116,39 @@ void loop() {
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
   
-  //send serial values
-    //Serial.print(a.acceleration.y);
-    //Serial.println(" 20 -20");
+  //debug
     if(!digitalRead(0)){
-      Serial.print("Rotation X:");
+      if(!debugtoggleblocker){debug=!debug;debugtoggleblocker=1;}
+    }else{
+      debugtoggleblocker=0;
+    }
+    if(debug){
+      //sprintf?
+      Serial.print(" hitstage:");
+      Serial.print(hitstage);
+      Serial.print(" mod:");
+      Serial.print(hitstage%2);
+      Serial.print(" X:");
       Serial.print(a.acceleration.x);
-      Serial.print("   Y:");
+      Serial.print(" Y:");
       Serial.print(a.acceleration.y);
-      Serial.print("   Z:");
+      Serial.print(" Z:");
       Serial.print(a.acceleration.z);
       Serial.println(" High:20 Low:-20");
       Serial.println();
+      
     }
+  //determine motion
+    if(a.acceleration.y<gLow&&hitstage%2==0){
+      hitstage++;
+    }
+    if(a.acceleration.y>gHigh&&hitstage%2==1){
+      hitstage++;
+    }
+    if(hitstage==1){
+      firstHitTime=millis();
+    }
+    
   //create percent values 
     data.pin4 =round(map(analogRead(pin4),0,4095,0,100));
     data.pin3 =round(map(analogRead(pin3),0,4095,0,100));
