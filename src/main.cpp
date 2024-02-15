@@ -14,13 +14,17 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
+//init constant motion track variables
+  const int gLow=-6;
+  const int gHigh=18;
+  const int timePerHit=1000;
 //init misc var
   long firstHitTime=0;
+  long prevHitTime=0;
   int hitstage=0;
   bool debugtoggleblocker=0;
   bool debug=0;
-  int gLow=-6;
-  int gHigh=18;
+
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
   //t-disp with pin:D4:D4:DA:5D:F6:C8
@@ -123,7 +127,6 @@ void loop() {
       debugtoggleblocker=0;
     }
     if(debug){
-      //sprintf?
       Serial.print(" hitstage:");
       Serial.print(hitstage);
       Serial.print(" mod:");
@@ -141,12 +144,20 @@ void loop() {
   //determine motion
     if(a.acceleration.y<gLow&&hitstage%2==0){
       hitstage++;
+      if(hitstage==1){firstHitTime=millis();}
+      prevHitTime=millis();
     }
     if(a.acceleration.y>gHigh&&hitstage%2==1){
       hitstage++;
+      prevHitTime=millis();
     }
-    if(hitstage==1){
-      firstHitTime=millis();
+    if(prevHitTime+timePerHit<millis()){
+      hitstage=0;
+    }
+    if(hitstage>5){
+      if(hitstage<7){
+
+      }
     }
     
   //create percent values 
