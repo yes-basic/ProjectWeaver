@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <serialCommand.h>
 
 #include <esp_now.h>
 #include <WiFi.h>
@@ -61,7 +61,7 @@ Adafruit_MPU6050 mpu;
 String inputString="";
 char inChar;
 
-
+serialCommand command(2);
 
 
 void setup() {
@@ -144,7 +144,7 @@ void loop() {
     }
   //temp debug
     
-      Serial.println(serialcommand(false)); 
+      Serial.println(command.number()); 
   //determine motion  
     if(hitStage<5){
       if(a.acceleration.y<gLow&&hitStage%2==0){
