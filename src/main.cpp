@@ -11,7 +11,7 @@
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 bool senddata(int symbol,int dataHitStage);
-
+String serialcommand(bool flush);
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
@@ -57,6 +57,9 @@ Adafruit_MPU6050 mpu;
 //init millis last
   int millisLastSend;
   int millisLastTFT;
+//init string stuff
+String inputString="";
+char inChar;
 
 
 
@@ -69,13 +72,16 @@ void setup() {
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  //init TFT  
     tft.init();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
-  //init tft sprite 
     img.createSprite(240, 135);
     img.fillSprite(TFT_BLACK);
-  //init gyro
+  //init mpu6050
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
     if (!mpu.begin()) {
       Serial.println("Failed to find MPU6050 chip");
       tft.println("MPU init failed");
@@ -106,6 +112,8 @@ void setup() {
         Serial.println("Failed to add peer");
         return;
       }
+  //init string stuff
+  inputString.reserve(200);
 }
  
 void loop() {
@@ -134,6 +142,9 @@ void loop() {
       Serial.println();
       
     }
+  //temp debug
+    
+      Serial.println(serialcommand(false)); 
   //determine motion  
     if(hitStage<5){
       if(a.acceleration.y<gLow&&hitStage%2==0){
@@ -229,5 +240,32 @@ bool senddata(int symbol, int dataHitStage){
            return false;
          }
       }  
-return false; 
+  return false; 
+}
+String serialcommand(bool flush) {
+  if(flush){
+    return inputString;
+  }
+  
+  if(inChar=='\n'){
+    return "ready";
+  }else{
+    if(Serial.available()){
+      while (Serial.available()) {
+        // get the new byte:
+        inChar = (char)Serial.read();
+        Serial.print(inChar);
+        // if the incoming character is a newline, return before
+        if (inChar == '\n') {
+          return "ready";
+        }
+        // add it to the inputString:
+        inputString += inChar;
+        return inputString;
+      }
+    }else{
+      return inputString;
+    }
+  }
+  return "failure";
 }
