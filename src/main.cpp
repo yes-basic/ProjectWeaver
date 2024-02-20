@@ -10,6 +10,7 @@
 #include <Wire.h> 
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+bool senddata(int symbol,int dataHitStage);
 
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
@@ -21,40 +22,36 @@ Adafruit_MPU6050 mpu;
 //init misc var
   long firstHitTime=0;
   long prevHitTime=0;
-  int hitstage=0;
+  int hitStage=0;
   bool debugtoggleblocker=0;
   bool debug=0;
+  bool result=0;
 
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
   //t-disp with pin:D4:D4:DA:5D:F6:C8
   //heltec mac EC:62:60:B3:B7:BC            EC:62:60:B3:B7:BC 
-  uint8_t broadcastAddress[] = {0xEC, 0x62, 0x60, 0xB3, 0xB7, 0xBC};
+  uint8_t broadcastAddress[] = {0xD4, 0xD4, 0xDa, 0x5D, 0xF6, 0xC8};
   esp_now_peer_info_t peerInfo;
 
 
 //init modular pins
   // ttgo 39 38 32 33
   int pin1=39;
-  int pin2=38;
-  int pin3=32;
+  int pin2=32;
+  int pin3=38;
   int pin4=33;
-// init esp-now Structure
-  typedef struct MARINOW {
-    char command[32];
-    int val1;
-    int val2;
-    int val3;
-    int val4;
-  } MARINOW;
-  MARINOW send1;
+// init send Structure
+  typedef struct RPSsend {
+    int RPS;
+    int hitStage;
+  } RPSsend;
+  RPSsend send;
 //init pin percent and  past percent struct
   typedef struct mainStruct{
     int pin1;
     int pin2;
     int pin3;
-    int pin4;
-    bool sendStat;
   }mainStruct;
   mainStruct data,dataTFT;
 //init millis last
@@ -62,11 +59,7 @@ Adafruit_MPU6050 mpu;
   int millisLastTFT;
 
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  //Serial.print("\r\nLast Packet Send Status:\t");
-  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  data.sendStat=status;
-}
+
 
 void setup() {
   // Init Serial Monitor, analog, and tft
@@ -127,10 +120,10 @@ void loop() {
       debugtoggleblocker=0;
     }
     if(debug){
-      Serial.print(" hitstage:");
-      Serial.print(hitstage);
+      Serial.print(" hitStage:");
+      Serial.print(hitStage);
       Serial.print(" mod:");
-      Serial.print(hitstage%2);
+      Serial.print(hitStage%2);
       Serial.print(" X:");
       Serial.print(a.acceleration.x);
       Serial.print(" Y:");
@@ -141,58 +134,50 @@ void loop() {
       Serial.println();
       
     }
-  //determine motion
-    if(hitstage<5){
-      if(a.acceleration.y<gLow&&hitstage%2==0){
-        hitstage++;
-        if(hitstage==1){firstHitTime=millis();}
+  //determine motion  
+    if(hitStage<5){
+      if(a.acceleration.y<gLow&&hitStage%2==0){
+        hitStage++;
+        if(hitStage==1){firstHitTime=millis();}
         prevHitTime=millis();
       }
-      if(a.acceleration.y>gHigh&&hitstage%2==1){
-        hitstage++;
+      if(a.acceleration.y>gHigh&&hitStage%2==1){
+        hitStage++;
         prevHitTime=millis();
       }
-      if(prevHitTime+timePerHit<millis()&&hitstage<6){
-        hitstage=0;
+      if(prevHitTime+timePerHit<millis()&&hitStage<6){
+        hitStage=0;
       }
+    senddata(0,hitStage);
     }else if(prevHitTime+timePerHit<millis()){
-      hitstage=0;
+      if (analogRead(pin1)<3100){
+        if(analogRead(pin2)<3200){
+          if(analogRead(pin3)<3100){
+            if(senddata(2,hitStage)){
+              hitStage=0;
+            }
+          }else{
+            if(senddata(3,hitStage)){
+              hitStage=0;
+            }
+          }
+        }
+      }else if(analogRead(pin2)>3200&&analogRead(pin3)>3100){
+        if(senddata(1,hitStage)){
+          hitStage=0;
+        }
+      }
+      
+      
       Serial.println("done");
-      delay(5000);
-    }
-    
-  //create percent values 
-    data.pin4 =round(map(analogRead(pin4),0,4095,0,100));
-    data.pin3 =round(map(analogRead(pin3),0,4095,0,100));
-    data.pin2 =round(map(analogRead(pin2),0,4095,0,100));
-    data.pin1 =round(map(analogRead(pin1),0,4095,0,100));
+    }    
   
-  
-  //Send message via ESP-NOW
-    if(millis()-millisLastSend>25){
-      millisLastSend=millis();
-      // Set values to send
-        send1.val1 = data.pin1;
-        send1.val2 = data.pin2;
-        send1.val3 = data.pin3;
-        send1.val4 = data.pin4;
-      esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &send1, sizeof(send1));
-    
-      //check send result
-        if (result == ESP_OK) {
-          //Serial.println("Sent with success");
-         }
-         else {
-           //Serial.println("Error sending the data");
-         }
-      }     
-
   //tft refresh
     
         img.fillSprite(TFT_BLACK);
         img.setTextSize(2);
        //send success 
-         if(data.sendStat == ESP_NOW_SEND_SUCCESS)
+         if(result)
         {img.setTextColor(TFT_GREEN);} else 
         {img.setTextColor(TFT_RED);}
         /*
@@ -202,25 +187,47 @@ void loop() {
         img.drawString("pin 4:",0,102,2);img.drawNumber(data.pin4,75,102,2);img.drawString("%",100,102,2);
         */
         img.setCursor(0, 0, 2);
-        img.print(data.pin1);img.println("%"); 
-        img.print(data.pin2);img.println("%");
-        img.print(data.pin3);img.println("%");
-        img.print(data.pin4);img.println("%");
+        img.println(analogRead(pin1)); 
+        img.println(analogRead(pin2));
+        img.println(analogRead(pin3));
         img.setCursor(75,0,2); img.println("m/s^2  angle");
         img.setCursor(75,34.2);  img.print("x");img.println(a.acceleration.x);
         img.setCursor(75,68,2);  img.print("y");img.println(a.acceleration.y);
         img.setCursor(75,102,2);  img.print("z");img.println(a.acceleration.z);
         
         img.pushSprite(0, 0);
-        //update tft variables
-          dataTFT.pin1=data.pin1;
-          dataTFT.pin2=data.pin2;
-          dataTFT.pin3=data.pin3;
-          dataTFT.pin4=data.pin4;
-          dataTFT.sendStat=data.sendStat;
+          
 
     
 
 
 
+}
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  //Serial.print("\r\nLast Packet Send Status:\t");
+  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+
+}
+bool senddata(int symbol, int dataHitStage){
+  //Send message via ESP-NOW
+    if(millis()-millisLastSend>25){
+      millisLastSend=millis();
+      // Set values to send
+      send.RPS=symbol;
+      send.hitStage=dataHitStage;
+      esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &send, sizeof(send));
+    
+      //check send result
+        if (result == ESP_OK) {
+          //Serial.println("Sent with success");
+          result=true;
+          return true;
+         }
+         else {
+           //Serial.println("Error sending the data");
+           result=false;
+           return false;
+         }
+      }  
+return false; 
 }
