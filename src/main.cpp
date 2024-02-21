@@ -114,11 +114,9 @@ void loop() {
     mpu.getEvent(&a, &g, &temp);
   
   //debug
-    if(!digitalRead(0)){
-      if(!debugtoggleblocker){debug=!debug;debugtoggleblocker=1;}
-    }else{
-      debugtoggleblocker=0;
-    }
+    
+    if(Serial.available()&&(char)Serial.read()=='\n'){debug=!debug;}
+    
     if(debug){
       Serial.print(" hitStage:");
       Serial.print(hitStage);
