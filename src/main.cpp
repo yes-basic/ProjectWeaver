@@ -58,10 +58,9 @@ Adafruit_MPU6050 mpu;
   int millisLastSend;
   int millisLastTFT;
 //init string stuff
-String inputString="";
-char inChar;
 
-serialCommand command(2);
+
+serialCommand inCom;
 
 
 void setup() {
@@ -112,8 +111,7 @@ void setup() {
         Serial.println("Failed to add peer");
         return;
       }
-  //init string stuff
-  inputString.reserve(200);
+
 }
  
 void loop() {
@@ -144,7 +142,8 @@ void loop() {
     }
   //temp debug
     
-      Serial.println(command.number()); 
+      Serial.println(inCom.command(false)); 
+      if(inCom.command(false)=="ready"){Serial.println(inCom.command(true));delay(5000);}
   //determine motion  
     if(hitStage<5){
       if(a.acceleration.y<gLow&&hitStage%2==0){
@@ -241,31 +240,4 @@ bool senddata(int symbol, int dataHitStage){
          }
       }  
   return false; 
-}
-String serialcommand(bool flush) {
-  if(flush){
-    return inputString;
-  }
-  
-  if(inChar=='\n'){
-    return "ready";
-  }else{
-    if(Serial.available()){
-      while (Serial.available()) {
-        // get the new byte:
-        inChar = (char)Serial.read();
-        Serial.print(inChar);
-        // if the incoming character is a newline, return before
-        if (inChar == '\n') {
-          return "ready";
-        }
-        // add it to the inputString:
-        inputString += inChar;
-        return inputString;
-      }
-    }else{
-      return inputString;
-    }
-  }
-  return "failure";
 }

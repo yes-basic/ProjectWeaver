@@ -6,10 +6,12 @@
 class serialCommand
 {
   public:
-    serialCommand(int num);
-    int number();
+    serialCommand();
+    String command(bool flush);
+    int thing(int num);
   private:
-  int _num;
+    String inputString;
+    char inChar;
 };
 
 #endif
