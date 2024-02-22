@@ -58,7 +58,7 @@ Adafruit_MPU6050 mpu;
   int millisLastSend;
   int millisLastTFT;
 //init string stuff
-
+char charArray[50];
 
 serialCommand inCom;
 
@@ -141,9 +141,22 @@ void loop() {
       
     }
   //temp debug
-    
-      Serial.println(inCom.command(false)); 
-      if(inCom.command(false)=="ready"){Serial.println(inCom.command(true));delay(5000);}
+      if(inCom.check()){       
+        inCom.commandString.toCharArray(charArray,50);
+        Serial.println(charArray);
+        Serial.println(inCom.commandString);
+        Serial.println(inCom.commandString=="clear");
+        
+        if(inCom.commandString=="clear"){
+          Serial.println("accepted");
+        }else{
+          Serial.println("denied");
+        }
+        
+        inCom.flush();
+        delay(5000);
+        }
+
   //determine motion  
     if(hitStage<5){
       if(a.acceleration.y<gLow&&hitStage%2==0){

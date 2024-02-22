@@ -7,11 +7,14 @@ class serialCommand
 {
   public:
     serialCommand();
-    String command(bool flush);
+    bool check();
+    String getCommand();
     int thing(int num);
+    void flush();
+    String commandString;
   private:
-    String inputString;
     char inChar;
+    
 };
 
 #endif
