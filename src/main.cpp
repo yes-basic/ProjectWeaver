@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include <serialCommand.h>
 
 #include <esp_now.h>
 #include <WiFi.h>
@@ -11,7 +11,7 @@
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 bool senddata(int symbol,int dataHitStage);
-
+String serialcommand(bool flush);
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
@@ -59,6 +59,7 @@ Adafruit_MPU6050 mpu;
   int millisLastTFT;
 
 
+serialCommand inCom;
 
 
 void setup() {
@@ -69,13 +70,16 @@ void setup() {
   mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  //init TFT  
     tft.init();
     tft.setRotation(3);
     tft.fillScreen(TFT_BLACK);
-  //init tft sprite 
     img.createSprite(240, 135);
     img.fillSprite(TFT_BLACK);
-  //init gyro
+  //init mpu6050
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
     if (!mpu.begin()) {
       Serial.println("Failed to find MPU6050 chip");
       tft.println("MPU init failed");
@@ -106,6 +110,7 @@ void setup() {
         Serial.println("Failed to add peer");
         return;
       }
+
 }
  
 void loop() {
@@ -114,10 +119,14 @@ void loop() {
     mpu.getEvent(&a, &g, &temp);
   
   //debug
-    
-    if(Serial.available()&&(char)Serial.read()=='\n'){debug=!debug;}
-    
-    if(debug){
+    if(inCom.check()){
+      if(inCom.commandString=="debug"){
+        debug=!debug;
+      }  
+    Serial.println(inCom.commandString);
+    inCom.flush();
+    }
+    if(debug&&inCom.commandString==""){
       Serial.print(" hitStage:");
       Serial.print(hitStage);
       Serial.print(" mod:");
@@ -132,6 +141,7 @@ void loop() {
       Serial.println();
       
     }
+
   //determine motion  
     if(hitStage<5){
       if(a.acceleration.y<gLow&&hitStage%2==0){
@@ -227,5 +237,5 @@ bool senddata(int symbol, int dataHitStage){
            return false;
          }
       }  
-return false; 
+    return false; 
 }
