@@ -57,8 +57,7 @@ Adafruit_MPU6050 mpu;
 //init millis last
   int millisLastSend;
   int millisLastTFT;
-//init string stuff
-char charArray[50];
+
 
 serialCommand inCom;
 
@@ -120,12 +119,14 @@ void loop() {
     mpu.getEvent(&a, &g, &temp);
   
   //debug
-    if(!digitalRead(0)){
-      if(!debugtoggleblocker){debug=!debug;debugtoggleblocker=1;}
-    }else{
-      debugtoggleblocker=0;
+    if(inCom.check()){
+      if(inCom.commandString=="debug"){
+        debug=!debug;
+      }  
+    Serial.println(inCom.commandString);
+    inCom.flush();
     }
-    if(debug){
+    if(debug&&inCom.commandString==""){
       Serial.print(" hitStage:");
       Serial.print(hitStage);
       Serial.print(" mod:");
@@ -140,22 +141,6 @@ void loop() {
       Serial.println();
       
     }
-  //temp debug
-      if(inCom.check()){       
-        inCom.commandString.toCharArray(charArray,50);
-        Serial.println(charArray);
-        Serial.println(inCom.commandString);
-        Serial.println(inCom.commandString=="clear");
-        
-        if(inCom.commandString=="clear"){
-          Serial.println("accepted");
-        }else{
-          Serial.println("denied");
-        }
-        
-        inCom.flush();
-        delay(5000);
-        }
 
   //determine motion  
     if(hitStage<5){
@@ -252,5 +237,5 @@ bool senddata(int symbol, int dataHitStage){
            return false;
          }
       }  
-  return false; 
+    return false; 
 }
