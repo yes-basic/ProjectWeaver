@@ -16,8 +16,8 @@ TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite img = TFT_eSprite(&tft);
 Adafruit_MPU6050 mpu;
 //init constant motion track variables
-  const int gLow=-6;
-  const int gHigh=18;
+  const int gLow=-4;
+  const int gHigh=16;
   const int timePerHit=1000;
 //init misc var
   long firstHitTime=0;
