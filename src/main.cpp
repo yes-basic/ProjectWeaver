@@ -25,7 +25,7 @@ Adafruit_MPU6050 mpu;
   int hitStage=0;
   bool debugtoggleblocker=0;
   bool debug=0;
-  bool result=0;
+  bool resultTwo=0;
 
 //init peerinfo
   //no screen mac address: 58:BF:25:9E:D5:14
@@ -37,8 +37,8 @@ Adafruit_MPU6050 mpu;
 
 //init modular pins
   // ttgo 39 38 32 33
-  int pin1=39;
-  int pin2=32;
+  int pin1=32;
+  int pin2=39;
   int pin3=38;
   int pin4=33;
 // init send Structure
@@ -122,7 +122,13 @@ void loop() {
     if(inCom.check()){
       if(inCom.commandString=="debug"){
         debug=!debug;
-      }  
+      }
+      if(inCom.commandString=="r") {senddata(1,100);delay(1000);} 
+      if(inCom.commandString=="p") {senddata(2,100);delay(1000);} 
+      if(inCom.commandString=="s") {senddata(3,100);delay(1000);} 
+
+
+      
     Serial.println(inCom.commandString);
     inCom.flush();
     }
@@ -156,11 +162,11 @@ void loop() {
       if(prevHitTime+timePerHit<millis()&&hitStage<6){
         hitStage=0;
       }
-    senddata(0,hitStage);
+    if(millis()-millisLastSend>25){senddata(0,hitStage);}
     }else if(prevHitTime+timePerHit<millis()){
       if (analogRead(pin1)<3100){
         if(analogRead(pin2)<3200){
-          if(analogRead(pin3)<3100){
+          if(analogRead(pin3)<3000){
             if(senddata(2,hitStage)){
               hitStage=0;
             }
@@ -185,21 +191,23 @@ void loop() {
         img.fillSprite(TFT_BLACK);
         img.setTextSize(2);
        //send success 
-         if(result)
+        /*if(resultTwo)
         {img.setTextColor(TFT_GREEN);} else 
         {img.setTextColor(TFT_RED);}
+        */
         /*
         img.drawString("pin 1:",0,0,2);img.drawNumber(data.pin1,75,0,2);img.drawString("%",100,0,2);
         img.drawString("pin 2:",0,34,2);img.drawNumber(data.pin2,75,34,2);img.drawString("%",100,34,2);
         img.drawString("pin 3:",0,68,2);img.drawNumber(data.pin3,75,68,2);img.drawString("%",100,68,2);
         img.drawString("pin 4:",0,102,2);img.drawNumber(data.pin4,75,102,2);img.drawString("%",100,102,2);
         */
+        img.setTextColor(TFT_WHITE);
         img.setCursor(0, 0, 2);
         img.println(analogRead(pin1)); 
         img.println(analogRead(pin2));
         img.println(analogRead(pin3));
         img.setCursor(75,0,2); img.println("m/s^2  angle");
-        img.setCursor(75,34.2);  img.print("x");img.println(a.acceleration.x);
+        img.setCursor(75,34,2);  img.print("x");img.println(a.acceleration.x);
         img.setCursor(75,68,2);  img.print("y");img.println(a.acceleration.y);
         img.setCursor(75,102,2);  img.print("z");img.println(a.acceleration.z);
         
@@ -218,7 +226,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 }
 bool senddata(int symbol, int dataHitStage){
   //Send message via ESP-NOW
-    if(millis()-millisLastSend>25){
+    
       millisLastSend=millis();
       // Set values to send
       send.RPS=symbol;
@@ -228,14 +236,13 @@ bool senddata(int symbol, int dataHitStage){
       //check send result
         if (result == ESP_OK) {
           //Serial.println("Sent with success");
-          result=true;
+          resultTwo=true;
           return true;
          }
          else {
            //Serial.println("Error sending the data");
-           result=false;
+           resultTwo=false;
            return false;
          }
-      }  
-    return false; 
+
 }
